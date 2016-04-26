@@ -7,7 +7,8 @@
 struct Index {
 	size_t size;	
 	size_t counter;
-	Index(size_t size = 0, size_t counter = 0) : 
+	std::map<size_t, std::map <size_t, Index>::iterator*>::iterator sortedFragment;
+	Index(size_t size = 0, size_t counter = 0) :
 		size(size), counter(counter) {};
 };
 
@@ -23,18 +24,18 @@ public:
 			throw "Fragment not found";
 		}
 		else {
-			size_t index = it->second;
-			sortedFragments.erase(it);
-			auto it2 = fragments.find(index);
-			it2->second.counter = 1;			
-			if (it2->second.size > n) {				
-				size_t tmpIndex = it2->first + n;
-				size_t tmpSize = it2->second.size - n;
-				fragments.insert(std::make_pair(tmpIndex, Index(tmpSize, 1)));
-				sortedFragments.insert(std::make_pair(tmpSize, tmpIndex));
+			auto it2 = it->second;
+			sortedFragments.erase(it);			
+			(*it2)->second.counter = 1;			
+			if ((*it2)->second.size > n) {
+				size_t tmpIndex = (*it2)->first + n;
+				size_t tmpSize = (*it2)->second.size - n;
+				std::map<size_t, Index>::iterator* tmp = new std::map<size_t, Index>::iterator;
+				*tmp = fragments.insert(std::make_pair(tmpIndex, Index(tmpSize, 1))).first;
+				(*tmp)->second.sortedFragment = sortedFragments.insert(std::make_pair(tmpSize, tmp)).first;				
 			}
-			it2->second.size = n;
-			return &mem[it2->first];
+			(*it2)->second.size = n;
+			return &mem[(*it2)->first];
 		}
 		return nullptr;
 	}
@@ -47,16 +48,21 @@ public:
 		auto it = cur;		
 		if (it != fragments.begin()) {
 			if ((--it)->second.counter == 0) {
-				Merge(it, cur);
+				cur  = Merge(cur, it);
 			}						
 		}		
 		it = cur;
 		if (++it != fragments.end()) {
 			if (it->second.counter == 0) {
-				cur  = Merge(cur, it);
+				Merge(it, cur);
 			}
-		}		
-		sortedFragments.insert(std::make_pair(fragments[index].size, index));		
+		}
+
+		std::map<size_t, Index>::iterator* tmp = new std::map<size_t, Index>::iterator;	
+		(*tmp) = cur;
+		(*tmp)->second.sortedFragment = sortedFragments.insert(std::make_pair(cur->second.size, tmp)).first;
+
+		//sortedFragments.insert(std::make_pair(fragments[index].size, index));		
 	}
 	void Increment(void* ptr) {
 		size_t index = (char*)ptr - &mem[0];
@@ -65,8 +71,9 @@ public:
 	int Include() { return 1; }
 private:	
 	Allocator() {		
-		fragments.insert(std::make_pair(0, Index(MBYTE * 500, 0)));
-		sortedFragments.insert(std::make_pair(MBYTE * 500, 0));
+		std::map<size_t, Index>::iterator* tmp = new std::map<size_t, Index>::iterator;
+		(*tmp) = fragments.insert(std::make_pair(0, Index(MBYTE * 500, 0))).first;
+		(*tmp)->second.sortedFragment = sortedFragments.insert(std::make_pair(MBYTE * 500, tmp)).first;
 	}
 	~Allocator() {}
 	std::map <size_t, Index>::iterator& Merge(std::map <size_t, Index>::iterator& it,
@@ -77,7 +84,7 @@ private:
 		return cur;
 	};
 	std::map <size_t, Index> fragments; 
-	std::map <size_t, size_t> sortedFragments;
+	std::map <size_t, std::map <size_t, Index>::iterator*> sortedFragments;
 	char mem[MBYTE * 500];
 };
 
