@@ -53,7 +53,7 @@ public:
 		it = cur;
 		if (++it != fragments.end()) {
 			if (it->second.counter == 0) {
-				Merge(it, cur);
+				cur  = Merge(cur, it);
 			}
 		}		
 		sortedFragments.insert(std::make_pair(fragments[index].size, index));		
@@ -69,17 +69,12 @@ private:
 		sortedFragments.insert(std::make_pair(MBYTE * 500, 0));
 	}
 	~Allocator() {}
-	void Merge(std::map <size_t, Index>::iterator& it,
+	std::map <size_t, Index>::iterator& Merge(std::map <size_t, Index>::iterator& it,
 		std::map <size_t, Index>::iterator& cur) {
-		cur->second.size += it->second.size;
-		auto range = sortedFragments.equal_range(it->second.size);
-		for (auto i = range.first; i != range.second; i++) {
-			if (i->second == it->first) {
-				sortedFragments.erase(i);
-				break;
-			}
-		}
+		cur->second.size += it->second.size;	
+		sortedFragments.erase(it->second.sortedFragment);
 		fragments.erase(it);
+		return cur;
 	};
 	std::map <size_t, Index> fragments; 
 	std::map <size_t, size_t> sortedFragments;
