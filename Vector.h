@@ -1,7 +1,7 @@
 #pragma once
 #include "MemoryManager.h"
 
-//const int include = MemoryManager::GetInstance().Include();
+const int include = MemoryManager::GetInstance().Include();
 
 template <class T>
 class Vector {
@@ -11,7 +11,7 @@ public:
 		//begin = (T*)Allocator::Allocate(sizeof(T) * sizeRe);
 		sizeLogic = n;
 		if (n != 0) {
-			begin = (T*)Allocator::GetInstance().Allocate(sizeof(T) * sizeRe);
+			begin = (T*)MemoryManager::GetInstance().Allocate(sizeof(T) * sizeRe);
 		}
 	};
 	Vector(Vector<T>& v) { 
@@ -24,23 +24,23 @@ public:
 		sizeRe = v.sizeRe;
 		sizeLogic = v.sizeLogic;
 		begin = v.begin;
-		Allocator::GetInstance().Increment(begin);
+		MemoryManager::GetInstance().Increment(begin);
 		return *this;
 	}
 	~Vector() {
 		if (sizeRe != 0) {			
-			Allocator::GetInstance().Deallocate(begin);
+			MemoryManager::GetInstance().Deallocate(begin);
 		}
 	}	
 	T& operator [](size_t index) { return *(begin + index); }
 	void PushBack(const T elem) {
 		if (++sizeLogic > sizeRe) {
-			T* newBegin = (T*)Allocator::GetInstance().Allocate(sizeof(T) * sizeLogic * 2);
+			T* newBegin = (T*)MemoryManager::GetInstance().Allocate(sizeof(T) * sizeLogic * 2);
 			//T* newBegin = (T*)Allocator::Allocate(sizeof(T) * sizeRe * 2);
 			
 			if (sizeRe != 0) {
 				memcpy(newBegin, begin, sizeof(T) * sizeRe);
-				Allocator::GetInstance().Deallocate(begin);
+				MemoryManager::GetInstance().Deallocate(begin);
 			}			
 			//Allocator::Deallocate(begin);
 			begin = newBegin;
