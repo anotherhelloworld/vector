@@ -12,10 +12,10 @@ struct Index {
 		size(size), counter(counter) {};
 };
 
-class Allocator {
+class MemoryManager {
 public:	
-	static Allocator& GetInstance() {
-		static Allocator allocator;
+	static MemoryManager& GetInstance() {
+		static MemoryManager allocator;
 		return allocator;
 	}
 	void* Allocate(size_t n) {
@@ -70,12 +70,12 @@ public:
 	}
 	int Include() { return 1; }
 private:	
-	Allocator() {		
+	MemoryManager() {		
 		std::map<size_t, Index>::iterator* tmp = new std::map<size_t, Index>::iterator;
 		(*tmp) = fragments.insert(std::make_pair(0, Index(MBYTE * 500, 0))).first;
 		(*tmp)->second.sortedFragment = sortedFragments.insert(std::make_pair(MBYTE * 500, tmp)).first;
 	}
-	~Allocator() {}
+	~MemoryManager() {}
 	std::map <size_t, Index>::iterator& Merge(std::map <size_t, Index>::iterator& it,
 		std::map <size_t, Index>::iterator& cur) {
 		cur->second.size += it->second.size;	

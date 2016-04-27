@@ -1,7 +1,7 @@
 #pragma once
-#include "Allocator.h"
+#include "MemoryManager.h"
 
-const int include = Allocator::GetInstance().Include();
+//const int include = MemoryManager::GetInstance().Include();
 
 template <class T>
 class Vector {
