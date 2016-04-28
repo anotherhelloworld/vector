@@ -1,7 +1,7 @@
 #pragma once
 #include "AllocatorInterface.h"
 
-template <class T, class Alloc>
+template <class T, class Alloc = Allocator<T>>
 class Vector {
 public:
 	Vector(size_t n = 0) {		

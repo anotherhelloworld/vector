@@ -8,9 +8,7 @@ struct Allocator {
 	typedef T value_type;	
 	typedef value_type* pointer;	
 	
-	Allocator() throw() {
-		//pool = &Pool(1023);
-	};
+	Allocator() throw() {};
 
 	Allocator(const Pool& _pool) throw() {
 		pool = const_cast<Pool*>(&_pool); 
