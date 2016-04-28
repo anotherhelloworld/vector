@@ -1,48 +1,67 @@
 #pragma once
-#include "MemoryManager.h"
+#include "AllocatorInterface.h"
 
-const int include = MemoryManager::GetInstance().Include();
-
-template <class T>
+template <class T, class Alloc>
 class Vector {
 public:
 	Vector(size_t n = 0) {		
 		sizeRe = n * 2;		
-		//begin = (T*)Allocator::Allocate(sizeof(T) * sizeRe);
 		sizeLogic = n;
-		if (n != 0) {
-			begin = (T*)MemoryManager::GetInstance().Allocate(sizeof(T) * sizeRe);
+		if (n != 0) {			
+			begin = alloc.allocate(sizeRe);
 		}
 	};
-	Vector(Vector<T>& v) { 
+
+	Vector(size_t n, const Alloc& _alloc) {
+		sizeRe = n * 2;
+		sizeLogic = n;
+		alloc = _alloc;
+		if (n != 0) {			
+			begin = alloc.allocate(sizeRe);
+		}
+	};
+	
+	/*Vector(size_t n, T a = T(), const Alloc& _alloc = Alloc()) {
+		sizeRe = n * 2;	
+		sizeLogic = n;
+		alloc = _alloc;
+		if (n != 0) {			
+			begin = (*alloc).allocate(sizeRe);
+		}		
+	};*/
+
+	Vector(Vector<T, Alloc>& v) { 
 		sizeRe = v.sizeRe;
 		sizeLogic = v.sizeLogic;
 		begin = v.begin;
-		Allocator::GetInstance().Increment(begin);
+		alloc = v.alloc;
+		alloc.Increment(begin);		
 	}
-	Vector<T>& operator =(const Vector<T>& v) {
+	Vector<T, Alloc>& operator =(const Vector<T, Alloc>& v) {
 		sizeRe = v.sizeRe;
 		sizeLogic = v.sizeLogic;
 		begin = v.begin;
-		MemoryManager::GetInstance().Increment(begin);
+		alloc = v.alloc;
+		alloc.Increment(begin);		
 		return *this;
 	}
 	~Vector() {
+		for (size_t i = 0; i < sizeLogic; i++) {
+			(begin + i)->~T();
+		}
 		if (sizeRe != 0) {			
-			MemoryManager::GetInstance().Deallocate(begin);
+			alloc.deallocate(begin, 0);
 		}
 	}	
 	T& operator [](size_t index) { return *(begin + index); }
 	void PushBack(const T elem) {
-		if (++sizeLogic > sizeRe) {
-			T* newBegin = (T*)MemoryManager::GetInstance().Allocate(sizeof(T) * sizeLogic * 2);
-			//T* newBegin = (T*)Allocator::Allocate(sizeof(T) * sizeRe * 2);
-			
+		if (++sizeLogic > sizeRe) {			
+			T* newBegin = alloc.allocate(sizeLogic * 2);
+
 			if (sizeRe != 0) {
 				memcpy(newBegin, begin, sizeof(T) * sizeRe);
-				MemoryManager::GetInstance().Deallocate(begin);
-			}			
-			//Allocator::Deallocate(begin);
+				alloc.deallocate(begin, 0);
+			}						
 			begin = newBegin;
 			sizeRe = sizeLogic * 2;
 		}
@@ -50,6 +69,7 @@ public:
 	}
 	size_t Size() { return sizeLogic; }
 private:
+	Alloc alloc;
 	size_t sizeRe;
 	size_t sizeLogic;
 	T* begin;

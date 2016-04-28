@@ -1,26 +1,51 @@
+#pragma once
 #include <cstddef>
-#include "MemoryManager.h"
+#include <iostream>
+#include "Pool.h"
+
 template <class T>
 struct Allocator {
 	typedef T value_type;	
 	typedef value_type* pointer;	
 	
-	Allocator();
-	~Allocator() throw() {}
-	template <class U> Allocator(const Allocator<U>& other);
-	T* allocate(std::size_t n) {
-		//return static_cast<pointer>(operator new(n * sizeof(T)));
-		return static_cast<pointer>((T*)MemoryManager::GetInstance().Allocate(sizeof(T) * n));
+	Allocator() throw() {
+		//pool = &Pool(1023);
 	};
-	void deallocate(T* p, std::size_t n) {
-		//operator delete(p);
-		MemoryManager::GetInstance().Deallocate(p);
-	};
-};
 
-template <typename T>
-Allocator<T>::Allocator() {		
-	//alloc = MemoryManager();
+	Allocator(const Pool& _pool) throw() {
+		pool = const_cast<Pool*>(&_pool); 
+	};
+
+	template<class U>	
+	Allocator(const Allocator<U>& a) {
+		pool = a.pool;
+	}
+
+	~Allocator() throw() {}	
+
+	T* allocate(std::size_t n) {				
+		return static_cast<pointer>((T*)(*pool).Allocate(sizeof(T) * n));		
+	};
+
+	void deallocate(T* p, std::size_t n) {		
+		(*pool).Deallocate(p);		
+	};	
+
+	template<class U, class... Args>
+	void construct(U* p, Args&&... args) {
+		new((void *)p) U(std::forward<Args>(args)...);
+	}
+
+	template<class U>
+	void destroy(U* p) {
+		p->~U();
+	}
+
+	void Increment(void* ptr) {
+		(*pool).Increment(ptr);
+	}
+	Pool* pool;	
+protected:	
 };
 
 template <class T, class U>
@@ -31,3 +56,4 @@ template <class T, class U>
 bool operator!=(const Allocator<T>&, const Allocator<U>&) throw() {
 	return false;
 };
+
